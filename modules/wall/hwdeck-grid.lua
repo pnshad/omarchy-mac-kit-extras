@@ -3,10 +3,11 @@
 -- 8 px gaps, below Omarchy's 26 px bar. Expressions on monitor_w/h: any resolution. No border
 -- and no dimming: otherwise the view under the mouse always shows Hyprland's active border.
 do
+  local top = 26      -- room kept for the bar: 26 with Omarchy's bar, 0 when touchbar-strip's wall.hide_bar hides it
   local col = "((monitor_w-32)/3)"
-  local half = "((monitor_h-26-24)/2)"
+  local half = "((monitor_h-" .. top .. "-24)/2)"
   local x = { "(8)", "(16+" .. col .. ")", "(24+2*" .. col .. ")" }
-  local y = { "(34)", "(42+" .. half .. ")" }
+  local y = { "(" .. (8 + top) .. ")", "(" .. (16 + top) .. "+" .. half .. ")" }
   local hwdeck_grid = {
     cpu = { 1, 1 }, thermal = { 2, 1 }, network = { 3, 1 },
     memory = { 1, 2 }, power = { 2, 2 }, battery = { 3, 2 },
