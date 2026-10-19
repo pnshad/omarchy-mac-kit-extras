@@ -47,6 +47,7 @@ PASS = float(sys.argv[sys.argv.index("--pass") + 1]) if "--pass" in sys.argv els
 GLITCH_AFTER_S = float(os.environ.get("OMK_GLITCH_AFTER", 600))
 GLITCH_EVERY_S = (240.0, 600.0)
 IDLE_GLITCH_S = float(os.environ.get("OMK_GLITCH_SECS", 4.0))
+GAP = max(1, int(os.environ.get("OMK_RAIN_GAP", 1)))   # a drop every GAP columns (1 = full, 2 = airy)
 WALL = "--wall" in sys.argv                 # idle saver hands over to the live hwdeck wall
 
 
@@ -71,15 +72,16 @@ def cursor(invisible):
 
 
 class Rain:
-    """One drop per (even) column: a white head writing new glyphs, a trail that keeps its glyphs
-    and fades from bright to dark green, erased behind the tail. Only trail cells are rewritten."""
+    """One drop every GAP columns (default every column): a white head writing new glyphs, a trail
+    that keeps its glyphs and fades from white to dark grey, erased behind the tail. Only trail cells
+    are rewritten."""
 
     def __init__(self, cols, rows, erase=None, trail=None):
         self.cols, self.rows = cols, rows
         self.erase = BLANK if erase is None else erase          # what a cell becomes behind a tail
         self.trail = trail                                      # (min, max) trail length, or None
         self.grid = [[" "] * rows for _ in range(cols)]
-        self.drops = {c: self.new(start=True) for c in range(0, cols - 1, 2)}
+        self.drops = {c: self.new(start=True) for c in range(0, cols - GAP + 1, GAP)}
         self.draining = False
         self.glitch = None                  # (column, until) while one column is hacked
         self.ghosts = []                    # stray red glyphs beside it, wiped the next frame
@@ -134,7 +136,7 @@ class Rain:
                         out.append(f"\033[{row + 1};{cc + 1}H{random.choice(TRAIL_R[:3])}{random.choice(GLYPHS)}")
                         self.ghosts.append((row, cc))
             for row in range(max(0, prev - length), min(self.rows, h - length)):
-                out.append(f"\033[{row + 1};{c + 1}H{self.erase}  ")
+                out.append(f"\033[{row + 1};{c + 1}H{self.erase}{' ' * GAP}")
             d[3] = h
             if h - length >= self.rows and not self.draining:
                 self.drops[c] = self.new()

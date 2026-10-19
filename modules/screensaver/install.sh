@@ -18,7 +18,8 @@ if [[ ${1:-} == --undo ]]; then
   act systemctl --user disable --now omk-rainpass.timer 2>/dev/null || true
   remove "$UNITS/omk-rainpass.timer" "$UNITS/omk-rainpass.service"
   act systemctl --user daemon-reload || true
-  remove "$OMK_OVERRIDE_DIR/omarchy-screensaver"
+  remove "$OMK_OVERRIDE_DIR/omarchy-screensaver" "$OMK_OVERRIDE_DIR/omarchy-launch-screensaver" \
+         "${XDG_CONFIG_HOME:-$HOME/.config}/omk/screensaver-foot.ini"
   block_remove "$HYPR_DIR/hyprland.lua" rainpass --
   block_remove "$HYPR_DIR/hyprland.conf" rainpass "#"
   block_remove "$HYPR_DIR/hyprland.lua" screensaver --
@@ -42,8 +43,12 @@ esac
 if is_omarchy && [[ $flavour == lua ]]; then
   ensure_override_dir
   install_file "$HERE/omarchy-screensaver.user-override" "$OMK_OVERRIDE_DIR/omarchy-screensaver" 0755
+  # the launcher override only scales the saver terminal's font (OMK_SAVER_FONT_SCALE, default 1.25)
+  install_file "$HERE/omarchy-launch-screensaver.user-override" "$OMK_OVERRIDE_DIR/omarchy-launch-screensaver" 0755
   path_override_add
   say "  idle → Omarchy opens its screensaver → the rain (omarchy-launch-screensaver force runs it now)"
+  say "  glyph size: Omarchy's saver font × OMK_SAVER_FONT_SCALE (1.25) via the launcher override"
+  say "  (the idle service picks it up after: omarchy-restart-shell)"
 else
   say "  not Omarchy: no idle takeover; omk-screensaver --demo runs the rain in any terminal"
 fi

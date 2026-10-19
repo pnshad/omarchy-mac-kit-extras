@@ -46,7 +46,7 @@ config. Its `lock-rain` action (a short rain, then lock) uses this repo's `omk-r
 ## Where things go
 
 - programs: `~/.local/bin/omk-screensaver` (+ `omk-deckwall`, `omk-rainpass` with `--with-wall`), `~/.local/bin/hwdeck`
-- Omarchy override: `~/.local/share/omk/bin/omarchy-screensaver` (first in Hyprland's PATH via a
+- Omarchy overrides: `~/.local/share/omk/bin/omarchy-screensaver` and `omarchy-launch-screensaver` (the launcher override only swaps foot's config for a copy with the font × `OMK_SAVER_FONT_SCALE`, default 1.25; `OMK_RAIN_GAP` = a drop every N columns, default 1) (first in Hyprland's PATH via a
   marked block, shared with omarchy-mac-kit)
 - Hyprland: marked blocks `omk:hwdeck-grid`, `omk:screensaver`, `omk:rainpass` (wall only) (and `omk:path-override`) appended to
   `~/.config/hypr/hyprland.lua`; a backup is kept as `hyprland.lua.omk-backup`
