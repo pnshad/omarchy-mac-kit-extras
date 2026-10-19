@@ -1,5 +1,37 @@
 #!/usr/bin/env bash
-# omarchy-mac-kit-extras: user override, first in the session PATH (~/.local/share/omk/bin), so Omarchy's
-# idle service runs omk-screensaver (the hwdeck wall + rain). Remove this file (or
-# ./install.sh --undo screensaver) to get Omarchy's own screensaver back.
-exec "$HOME/.local/bin/omk-screensaver" "$@"
+# omarchy-mac-kit-extras: user override, first in the PATH Hyprland gives the programs it starts
+# (~/.local/share/omk/bin), so Omarchy's screensaver terminal runs omk-screensaver (the rain) in
+# place of Omarchy's ttfx effects. Remove this file (or ./install.sh --undo screensaver) to get
+# Omarchy's own screensaver back.
+#
+# Glyph size: Omarchy opens its saver terminal with $OMARCHY_PATH/default/foot/screensaver.ini
+# (font size 18). To draw the rain OMK_SAVER_FONT_SCALE (default 1.25) bigger, the first run
+# writes a copy of that ini with the size scaled, asks Hyprland to open a second saver terminal
+# with it (same class, so Omarchy's rules and its "any key closes every saver window" apply) and
+# exits; the second run, marked, draws the rain. Both windows are plain black, so nothing shows.
+# OMK_SAVER_FONT_SCALE=1 (or no foot / no Hyprland) skips the respawn.
+rain="$HOME/.local/bin/omk-screensaver"
+scale=${OMK_SAVER_FONT_SCALE:-1.25}
+if [[ -z ${OMK_SAVER_RESPAWNED:-} && -n ${HYPRLAND_INSTANCE_SIGNATURE:-} && $scale != 1 ]] \
+   && command -v foot >/dev/null && command -v hyprctl >/dev/null; then
+  stock=${OMARCHY_PATH:-/usr/share/omarchy}/default/foot/screensaver.ini
+  ini=${XDG_CONFIG_HOME:-$HOME/.config}/omk/screensaver-foot.ini
+  if [[ -r $stock ]]; then
+    mkdir -p "${ini%/*}"
+    awk -v s="$scale" '
+      /^font=/ && match($0, /size=[0-9.]+/) {
+        size = substr($0, RSTART + 5, RLENGTH - 5) * s
+        $0 = substr($0, 1, RSTART - 1) sprintf("size=%.1f", size) substr($0, RSTART + RLENGTH)
+      }
+      { print }' "$stock" > "$ini.tmp" && mv -f "$ini.tmp" "$ini"
+  fi
+  if [[ -r $ini ]]; then
+    printf '\033]11;rgb:00/00/00\007'                  # this window: black until it goes
+    cmd="env OMK_SAVER_RESPAWNED=1 foot --app-id=org.omarchy.screensaver --config=$ini -e omarchy-screensaver"
+    if hyprctl dispatch "hl.dsp.exec_cmd([[$cmd]])" >/dev/null 2>&1 || hyprctl dispatch exec -- $cmd >/dev/null 2>&1; then
+      sleep 0.4                                         # let the new window map before this one closes
+      exit 0
+    fi
+  fi
+fi
+exec "$rain" "$@"
