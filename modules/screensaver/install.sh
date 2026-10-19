@@ -45,7 +45,7 @@ if is_omarchy && [[ $flavour == lua ]]; then
   install_file "$HERE/omarchy-screensaver.user-override" "$OMK_OVERRIDE_DIR/omarchy-screensaver" 0755
   path_override_add
   say "  idle → Omarchy opens its screensaver → the rain (omarchy-launch-screensaver force runs it now)"
-  say "  glyph size: Omarchy's saver font × OMK_SAVER_FONT_SCALE (1.25); the override reopens the saver terminal with it"
+  say "  glyph size: Omarchy's saver font × 1.25 (one number in ~/.config/omk/saver-font-scale to change)"
 else
   say "  not Omarchy: no idle takeover; omk-screensaver --demo runs the rain in any terminal"
 fi

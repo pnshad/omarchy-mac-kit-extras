@@ -9,9 +9,13 @@
 # writes a copy of that ini with the size scaled, asks Hyprland to open a second saver terminal
 # with it (same class, so Omarchy's rules and its "any key closes every saver window" apply) and
 # exits; the second run, marked, draws the rain. Both windows are plain black, so nothing shows.
-# OMK_SAVER_FONT_SCALE=1 (or no foot / no Hyprland) skips the respawn.
+# A scale of 1 (or no foot / no Hyprland) skips the respawn. Set it in ~/.config/omk/saver-font-scale.
 rain="$HOME/.local/bin/omk-screensaver"
+# the scale: ~/.config/omk/saver-font-scale (one number), else OMK_SAVER_FONT_SCALE, else 1.25
+scale_file=${XDG_CONFIG_HOME:-$HOME/.config}/omk/saver-font-scale
 scale=${OMK_SAVER_FONT_SCALE:-1.25}
+[[ -r $scale_file ]] && read -r scale < "$scale_file"
+[[ $scale =~ ^[0-9]+(\.[0-9]+)?$ ]] || scale=1.25
 if [[ -z ${OMK_SAVER_RESPAWNED:-} && -n ${HYPRLAND_INSTANCE_SIGNATURE:-} && $scale != 1 ]] \
    && command -v foot >/dev/null && command -v hyprctl >/dev/null; then
   stock=${OMARCHY_PATH:-/usr/share/omarchy}/default/foot/screensaver.ini
@@ -21,7 +25,7 @@ if [[ -z ${OMK_SAVER_RESPAWNED:-} && -n ${HYPRLAND_INSTANCE_SIGNATURE:-} && $sca
     awk -v s="$scale" '
       /^font=/ && match($0, /size=[0-9.]+/) {
         size = substr($0, RSTART + 5, RLENGTH - 5) * s
-        $0 = substr($0, 1, RSTART - 1) sprintf("size=%.1f", size) substr($0, RSTART + RLENGTH)
+        $0 = substr($0, 1, RSTART - 1) sprintf("size=%.2f", size) substr($0, RSTART + RLENGTH)
       }
       { print }' "$stock" > "$ini.tmp" && mv -f "$ini.tmp" "$ini"
   fi
