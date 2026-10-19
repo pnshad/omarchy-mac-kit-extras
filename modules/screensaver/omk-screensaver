@@ -5,9 +5,11 @@ Runs inside the terminal Omarchy opens for its screensaver (class org.omarchy.sc
 place of Omarchy's ttfx logo effects. Same exit rules as Omarchy's script: any key, or the window
 losing focus (mouse moved), closes every screensaver window and shows the cursor again.
 Standard library only. `omk-screensaver --demo` runs it in any terminal (any key quits).
-As the idle screensaver it hands over to omk-deckwall (the live hwdeck wall) when that is
-installed; `--rain` keeps the plain full-screen rain. `--pass N` is one rain pass over the screen
-(used by omk-rainpass); `--lock` with it: a short pass, then lock.
+As the idle screensaver it is plain, endless rain: for a long while nothing happens, then one
+column glitches red for a few seconds (first after OMK_GLITCH_AFTER s, default 600 = 10 min; then
+again every 4-10 min). `--wall` hands over to omk-deckwall (the live hwdeck wall) when that is
+installed (`--rain` = the default, kept for old overrides). `--pass N` is one rain pass over the
+screen (used by omk-rainpass); `--lock` with it: a short pass, then lock.
 """
 import json
 import os
@@ -40,6 +42,12 @@ DEMO = "--demo" in sys.argv
 # wall): transparent background in a click-through overlay, no exit on focus or keys, new drops
 # stop spawning near the end so the screen drains clean, then it exits.
 PASS = float(sys.argv[sys.argv.index("--pass") + 1]) if "--pass" in sys.argv else None
+# the idle glitch: nothing for a long while, then one column glitches red for IDLE_GLITCH_S, and
+# again every GLITCH_EVERY_S. OMK_GLITCH_AFTER / OMK_GLITCH_SECS override the timing (demo, tests).
+GLITCH_AFTER_S = float(os.environ.get("OMK_GLITCH_AFTER", 600))
+GLITCH_EVERY_S = (240.0, 600.0)
+IDLE_GLITCH_S = float(os.environ.get("OMK_GLITCH_SECS", 4.0))
+WALL = "--wall" in sys.argv                 # idle saver hands over to the live hwdeck wall
 
 
 def hypr(*args):
@@ -227,11 +235,11 @@ def main():
 
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT):
         signal.signal(sig, finish)
-    # As the idle screensaver (no flags): hand the screen to the hwdeck wall. This window only
-    # holds deep black (no rain of its own, or the pass would look like a restart) while
-    # omk-deckwall starts the pass on top and then closes this window. --rain keeps plain rain.
+    # --wall only: hand the screen to the hwdeck wall. This window then holds deep black (no rain
+    # of its own, or the pass would look like a restart) while omk-deckwall starts the pass on top
+    # and then closes this window. Without --wall (the default) this is plain, endless rain.
     wall = os.path.join(os.path.dirname(os.path.abspath(__file__)), "omk-deckwall")
-    hand_over = not DEMO and PASS is None and "--rain" not in sys.argv and os.access(wall, os.X_OK)
+    hand_over = WALL and not DEMO and PASS is None and os.access(wall, os.X_OK)
     if hand_over:
         subprocess.Popen([wall], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, start_new_session=True)
@@ -308,12 +316,15 @@ def main():
             time.sleep(0.6)
         finish()
     next_focus = time.time() + 1.5
+    next_glitch = time.time() + GLITCH_AFTER_S
     while True:
         start = time.time()
         if shutil.get_terminal_size() != size:
             size = shutil.get_terminal_size()
             rain = Rain(size.columns, size.lines)
             w("\033[2J")
+        if PASS is None and time.time() >= next_glitch and rain.hack(secs=IDLE_GLITCH_S):
+            next_glitch = time.time() + random.uniform(*GLITCH_EVERY_S)   # the glitch, then a long calm
         w(rain.frame())
         sys.stdout.flush()
         ready = select.select([fd], [], [], max(0, 1 / FPS - (time.time() - start)))[0]

@@ -1,7 +1,7 @@
 # omarchy-mac-kit-extras
 
 Optional extras for [Omarchy](https://github.com/basecamp/omarchy): a wall of live hardware
-dashboards, a digital-rain screensaver that hands over to that wall, and an hourly rain pass over
+dashboards, a digital-rain screensaver (optionally handing over to that wall, with an hourly rain pass over
 the screen — a pixel refresh for OLED and LCD panels that show the same picture for hours.
 
 None of it is needed for anything else. It works on its own, or next to
@@ -13,7 +13,7 @@ other wrote.
 |---|---|---|
 | `hwdeck` | [hwdeck](https://github.com/pnshad/hwdeck): full-screen terminal views of CPU, memory, thermal, network, power, battery (cloned at a pinned commit) | any Linux with a terminal |
 | `wall` | those six views as a 3×2 floating grid, no border and no dimming | Hyprland (Lua config: Omarchy 4; a `.conf` twin for classic configs, untested) |
-| `screensaver` | idle → digital rain that drains away to reveal the live wall; an hourly rain pass over the wall (pixel refresh) that ends on a red column; `omk-screensaver --demo` in any terminal | Omarchy (full takeover); plain Hyprland (rain pass + timer); any terminal (demo) |
+| `screensaver` | idle → endless digital rain inside Omarchy's own screensaver window; one column glitches red long after it starts (10 min, then every 4-10 min). Opt-in `--with-wall` / `OMK_WITH_WALL=1`: the rain drains away to reveal the live hwdeck wall, plus an hourly rain pass over the wall (pixel refresh) that ends on a red column; `omk-screensaver --demo` in any terminal | Omarchy (takeover); any terminal (demo); the wall and the rain pass need Hyprland |
 
 Tested on Omarchy 4.0.4 (MacBookPro14,2). Nothing needs root.
 
@@ -45,12 +45,12 @@ config. Its `lock-rain` action (a short rain, then lock) uses this repo's `omk-r
 
 ## Where things go
 
-- programs: `~/.local/bin/omk-screensaver`, `omk-deckwall`, `omk-rainpass`, `~/.local/bin/hwdeck`
+- programs: `~/.local/bin/omk-screensaver` (+ `omk-deckwall`, `omk-rainpass` with `--with-wall`), `~/.local/bin/hwdeck`
 - Omarchy override: `~/.local/share/omk/bin/omarchy-screensaver` (first in Hyprland's PATH via a
   marked block, shared with omarchy-mac-kit)
-- Hyprland: marked blocks `omk:hwdeck-grid`, `omk:rainpass` (and `omk:path-override`) appended to
+- Hyprland: marked blocks `omk:hwdeck-grid`, `omk:screensaver`, `omk:rainpass` (wall only) (and `omk:path-override`) appended to
   `~/.config/hypr/hyprland.lua`; a backup is kept as `hyprland.lua.omk-backup`
-- user units: `omk-rainpass.service` + `omk-rainpass.timer` (hourly; the pass runs only while an
+- user units (only with `--with-wall`): `omk-rainpass.service` + `omk-rainpass.timer` (hourly; the pass runs only while an
   hwdeck view is open and the panel is on)
 
 ## Gotchas
